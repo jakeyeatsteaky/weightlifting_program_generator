@@ -1,0 +1,59 @@
+{
+    "Week 1": {
+        "Day 1": {
+            "Squat" : {
+                "sets" : 5,
+                "reps" : 10,
+                "weight" : 100
+            },
+
+            "Hang Snatch Below the Knee" : {
+                "sets" : 3,
+                "reps" : 5,
+                "weight" : 60
+            },
+
+            "Deficit Snatch Pull" : {
+                "sets" : 4,
+                "reps" : 4,
+                "weight" : 100
+            },
+
+            "Press" : {
+                "sets" : 5,
+                "reps" : 10,
+                "weight" : 50
+            }
+            
+        }
+    },
+
+    "Week 2": {
+        "Day 1": {
+            "Squat" : {
+                "sets" : 5,
+                "reps" : 10,
+                "weight" : 100
+            },
+
+            "Hang Snatch Below the Knee" : {
+                "sets" : 3,
+                "reps" : 5,
+                "weight" : 60
+            },
+
+            "Deficit Snatch Pull" : {
+                "sets" : 4,
+                "reps" : 4,
+                "weight" : 100
+            },
+
+            "Press" : {
+                "sets" : 5,
+                "reps" : 10,
+                "weight" : 50
+            }
+            
+        }
+    }
+}

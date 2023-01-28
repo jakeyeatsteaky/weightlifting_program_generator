@@ -2,6 +2,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+
 class Exercise;
 class Week;
 class Day;
@@ -91,42 +95,43 @@ private:
     std::vector<Week*> m_weeks;
 };
 
+class Athlete {
+public:
+    Athlete(): m_name("Default Athlete"), m_bestSquat(0), m_bestFront(0), m_bestSnatch(0), m_bestCNJ(0) {}
+    Athlete(std::string name, float squat, float front, float snatch, float cnj): m_name(name), m_bestSquat(squat), m_bestFront(front), m_bestSnatch(snatch), m_bestCNJ(cnj) {}
 
+    std::string getName(){return m_name;}
+    float getSquat(){return m_bestSquat;}
+    float getFront(){return m_bestFront;}
+    float getSnatch(){return m_bestSnatch;}
+    float getCNJ(){return m_bestCNJ;}
+
+    void setName(std::string name) {m_name = name;}
+    void setSquat(float squat) {m_bestSquat = squat;}
+    void setFront(float front) {m_bestFront = front;}
+    void setSnatch(float snatch) {m_bestSnatch = snatch;}
+    void setCNJ(float cnj) {m_bestCNJ = cnj;}
+    
+private:
+    std::string m_name;
+    float m_bestSquat;
+    float m_bestFront;
+    float m_bestSnatch;
+    float m_bestCNJ;
+};
+
+Program* generateProgram(Athlete* athlete, const char* pathToJson, std::vector<float> percentages);
 
 void Assign_Intensity(Exercise* exercise, float percentage);
 
 int main(int argc, char** argv){
-    Exercise* exercise1 = new Exercise ("Squat", eUNIT_KG, 5, 10, 100);
-    Assign_Intensity(exercise1, 0.80f);
-    Exercise* exercise2 = new Exercise ("Dead", eUNIT_KG, 5, 10, 100);
-    Exercise* exercise3 = new Exercise ("Snatch", eUNIT_KG, 5, 10, 100);
-    Exercise* exercise4 = new Exercise ("Clean", eUNIT_KG, 5, 10, 100);
-    std::vector<Exercise*> exercises_vec {};
-    exercises_vec.push_back(exercise1);
-    exercises_vec.push_back(exercise2);
-    Day* day1 = new Day(exercises_vec, 1);
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_json("Files/test.json",pt);
 
-    exercises_vec.push_back(exercise3);
-    Day* day2 = new Day(exercises_vec, 2);
+    std::string week1SquatWeight = pt.get<std::string>("Week 1");
+    std::cout << week1SquatWeight;
 
-    exercises_vec.push_back(exercise4);
-    Day* day3 = new Day(exercises_vec, 3);
-
-    std::vector<Day*> days_vec {};
-    days_vec.push_back(day1);
-    days_vec.push_back(day2);
-    days_vec.push_back(day3);
-
-    Week* week3 = new Week(days_vec, 1);
-    Week* week2 = new Week(days_vec, 2);
-    Week* week1 = new Week(days_vec, 3);
-    std::vector<Week*> weeks_vec {};
-    weeks_vec.push_back(week3);
-    weeks_vec.push_back(week1);
-    weeks_vec.push_back(week2);
-
-    Program* program1 = new Program("Jacked by Jake", weeks_vec);
-    program1->printProgram();
+    
     return 0;
 }
 
@@ -168,4 +173,19 @@ void Program::printProgram(){
 
 void Assign_Intensity(Exercise* exercise, float percentage){
     exercise->setWeight(percentage * exercise->getWeight());
+}
+
+Program* generateProgram(Athlete* athlete, const char* pathToJson, std::vector<float> percentages){
+    std::vector<Week*> weeks_vec = generateWeeks(pathToJson);
+    for(Week* week : weeks_vec){
+        std::vector<Day*> days_vec = generateDays(week, pathToJson);
+    }
+
+    for(Day* days: days_vec){
+        std::vector<Exercise*> exercises_vect = generateExercises(week, day, pathToJson);
+    }
+
+    Program* generatedProgram = new Program();
+    generatedProgram->setName("Generic Program");
+    
 }
