@@ -25,7 +25,11 @@ typedef enum {
     eExercise_Type_Jerk = 3,
     eExercise_Type_Front = 4
     
-} EXERCISE_TYPE;
+} Exercise_Type;
+
+typedef enum {
+    eProgression_Protocol_Regular = 0
+} Progression_Protocol;
 
 class Exercise {
 public:
@@ -41,7 +45,7 @@ public:
     float getSets() {return m_sets;}
     float getReps() {return m_reps;}
     float getPercentage() {return m_percentage;}
-    EXERCISE_TYPE getExerciseType() {return m_exerciseType;}
+    Exercise_Type getExerciseType() {return m_exerciseType;}
     float getWeight() {return m_weight;}
     
     void setName(std::string name) {m_name = name;}
@@ -49,7 +53,7 @@ public:
     void setSets(float value) { m_sets = value;}
     void setReps(float value) { m_reps = value;}
     void setPercentage(float value) { m_percentage = value;}
-    void setExerciseType(EXERCISE_TYPE exerciseType) { m_exerciseType = exerciseType;}
+    void setExerciseType(Exercise_Type exerciseType) { m_exerciseType = exerciseType;}
     void setWeight(float weight) { m_weight = weight;}
 
     void printExercise();
@@ -57,7 +61,7 @@ public:
 private:
     std::string m_name;
     UNIT m_units;
-    EXERCISE_TYPE m_exerciseType;
+    Exercise_Type m_exerciseType;
     float m_sets;
     float m_reps;
     float m_percentage;
@@ -141,10 +145,12 @@ private:
 };
 
 void testExerciseTypes(std::vector<std::string> names, std::vector<int> exercisetypes);
-Program* generateProgram(std::vector<Exercise*> baseTemplate, int weeks, Athlete* athlete, int daysPerWeek);
-EXERCISE_TYPE identifyExerciseType(std::string name);
+Program* generateProgram(std::vector<Exercise*>& baseTemplate, int weeks, Athlete* athlete, int daysPerWeek);
+Exercise_Type identifyExerciseType(std::string name);
 std::vector<Exercise*> generateBaseTemplate(const char* pathToJson);
 void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete);
+std::vector<Week*> generateWeeklyProgression(std::vector<Day*> Week1, Progression_Protocol progressionProtocol, int numberOfWeeks);
+float calculateIncrease(Progression_Protocol progressionProtocol, Exercise* exercise);
 
 int main(int argc, char** argv){
     const char* pathToJson = "Files/test.json";
@@ -154,10 +160,10 @@ int main(int argc, char** argv){
     Athlete* athlete = new Athlete("Jake", 200, 145, 120, 140);
     std::vector<Exercise*> baseTemplate = generateBaseTemplate(pathToJson);
     Assign_Intensities(baseTemplate, athlete);
-    
     int weeks = 4;
     int daysPerWeek = 3;
     Program* program = generateProgram(baseTemplate, weeks, athlete, daysPerWeek);
+    program->printProgram();
 
     return 0;
 }
@@ -170,16 +176,16 @@ void Exercise::printExercise(){
     else
         unit = "kg";
     if(getExerciseType() == eExercise_Type_Unassigned)
-        std::cout << getName() << ": " << getSets() << " x " << getReps() << " @ " << getPercentage() << "%\n";
+        std::cout << "\t" << getName() << ": " << getSets() << " x " << getReps() << " @ " << getPercentage() << "%\n";
     else   
-        std::cout << getName() << ": " << getSets() << " x " << getReps() << " @ " << getWeight()  << unit << " (" << getPercentage() << "%)\n";
+        std::cout << "\t" << getName() << ": " << getSets() << " x " << getReps() << " @ " << getWeight()  << unit << " (" << getPercentage() << "%)\n";
 }
 
 void Day::printDay(){
     
     printf("Day: %d\n", getIdx());
     for(Exercise* ex : m_exercises){
-        printf("\t\t\t");
+        printf("\t\t");
         ex->printExercise();
     }
 }
@@ -225,10 +231,21 @@ void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete){
    } 
 }
 
-Program* generateProgram(Athlete* athlete, const char* pathToJson, std::vector<float> percentages, UNIT units){
-//    std::vector<Exercise*> exercises = generateExercises(const char* pathToJson, )
-    return new Program();
+Program* generateProgram(std::vector<Exercise*>& baseTemplate, int weeks, Athlete* athlete, int daysPerWeek){
+    // Populate Days
+    std::vector<Day*> days {};
+    for(int i = 0; i < daysPerWeek; i++){
+        std::vector<Exercise*> dailyExercises = {baseTemplate[0+i], baseTemplate[1+i], baseTemplate[2+i], baseTemplate[3+i]};
+        Day* day = new Day(dailyExercises, i+1);
+        days.push_back(day);
+    }
+
+    std::vector<Week*> programWeeks = generateWeeklyProgression(days, eProgression_Protocol_Regular, weeks);
+
+    Program* program = new Program("Some Program", programWeeks);
+    return program;
 }
+
 
 std::vector<Exercise*> generateBaseTemplate(const char* pathToJson){
     std::vector<Exercise*> exercises {};
@@ -270,11 +287,7 @@ std::vector<Exercise*> generateBaseTemplate(const char* pathToJson){
 
 } 
 
-Program* generateProgram(std::vector<Exercise*> baseTemplate, int weeks, Athlete* athlete, int daysPerWeek){
-    return new Program();
-}
-
-EXERCISE_TYPE identifyExerciseType(std::string name){
+Exercise_Type identifyExerciseType(std::string name){
     for(int i = 0; i < name.size(); i++){
         switch(name[i]){
             case 'F':
@@ -303,7 +316,7 @@ EXERCISE_TYPE identifyExerciseType(std::string name){
 void testExerciseTypes(std::vector<std::string> names, std::vector<int> exercisetypes) {
     int count = 0;
     for(std::string n : names){
-        EXERCISE_TYPE type = identifyExerciseType(n);
+        Exercise_Type type = identifyExerciseType(n);
         assert(type == exercisetypes[count]);
         count++;
     }
@@ -326,4 +339,29 @@ void testExerciseTypes(std::vector<std::string> names, std::vector<int> exercise
     // std::vector<int> exercise_types = {0, 1, 2, 4, 4, 3, 1, -1, 0, 1, -1};
     // testExerciseTypes(exerciseNames, exercise_types);
 
+}
+
+std::vector<Week*> generateWeeklyProgression(std::vector<Day*> Week1, Progression_Protocol progressionProtocol, int numberOfWeeks){
+    std::vector<Week*> program {};
+    int weekCount = 1;
+    program.push_back(new Week(Week1, weekCount));
+    for(int weekCount = 2; weekCount <= numberOfWeeks; weekCount++){
+        for(Day* day : Week1){
+            for(Exercise* ex : day->getExercises()){
+                float increase = calculateIncrease(progressionProtocol, ex);
+                ex->setReps(ex->getReps() - 1);
+                ex->setSets(ex->getSets() + 1);
+                ex->setWeight(ex->getWeight() + increase);
+            }
+        }
+        program.push_back(new Week(Week1, weekCount));
+    }
+    return program;
+}
+
+float calculateIncrease(Progression_Protocol progressionProtocol, Exercise* exercise){
+    if(progressionProtocol == eProgression_Protocol_Regular)
+        return (exercise->getWeight() * 0.05f);
+    else
+        return 0.0f;
 }
