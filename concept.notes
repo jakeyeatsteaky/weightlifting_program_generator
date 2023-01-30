@@ -1,4 +1,4 @@
-What is a Program?
+
 
 Program
     Week
@@ -14,7 +14,29 @@ Program
             set       set
             rep       rep
 
+What I want to be able to do;
+Take a json object and turn it into c++ objects:
+Week 1:
+    Day1:
+        Exercise1
+        Exercise2
+        Exercise3
+    Day2:
+        Exercise1
+        Exercise2
+        Exercise3
+    Day3:
+        Exercise1
+        Exercise2
+        Exercise3
 
+Some thoughts:
+    [ ] I want the program creation to use a json object to make it easier for me to generate thr program.  Program class will have athlete data as members:
+        - m_bestSquat, m_bestSnatch etc.
+        - Program class can have metrics on athlete for modifiers (based on strength reserve)
+    [ ] The size is large by using all of these classes.  This will require some though but how can the entirety of the program be encoded into a single vector?
+    [ ] Accessory focus can be a selectable feature which appends accessories to the program based on focus
+        - lower body hypertrophy, shoulder stability, etc.
 
 
 

@@ -1,0 +1,75 @@
+{
+
+    "Day 1": {
+        "Squat" : {
+            "sets" : 5,
+            "reps" : 10,
+            "percentage" : 0.75
+        },
+        "Hang Snatch Below the Knee" : {
+            "sets" : 3,
+            "reps" : 5,
+            "percentage" :0.75
+        },
+        "Deficit Snatch Pull" : {
+            "sets" : 4,
+            "reps" : 4,
+            "percentage" : 0.75
+        },
+        "Press" : {
+            "sets" : 5,
+            "reps" : 10,
+            "percentage" :0.75
+        }
+        
+    },
+
+    "Day 2": {
+        "Front Squat" : {
+            "sets" : 5,
+            "reps" : 10,
+            "percentage" : 0.75
+        },
+        "Hang Clean Below the Knee" : {
+            "sets" : 3,
+            "reps" : 5,
+            "percentage" :0.75
+        },
+        "Deficit Clean Pull" : {
+            "sets" : 4,
+            "reps" : 4,
+            "percentage" : 0.75
+        },
+        "Jerk" : {
+            "sets" : 5,
+            "reps" : 10,
+            "percentage" :0.75
+        }
+        
+    },
+
+    "Day 3": {
+        "Squat" : {
+            "sets" : 5,
+            "reps" : 10,
+            "percentage" : 0.75
+        },
+        "Snatch" : {
+            "sets" : 3,
+            "reps" : 5,
+            "percentage" :0.75
+        },
+        "Clean and Jerk" : {
+            "sets" : 4,
+            "reps" : 4,
+            "percentage" : 0.75
+        },
+        "Press" : {
+            "sets" : 5,
+            "reps" : 10,
+            "percentage" :0.75
+        }
+        
+    }
+
+}
