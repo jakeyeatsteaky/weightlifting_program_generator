@@ -23,15 +23,15 @@ typedef enum {
     eExercise_Type_Snatch = 1,
     eExercise_Type_Clean = 2,
     eExercise_Type_Jerk = 3,
-    eExercise_Type_Power = 4
+    eExercise_Type_Front = 4
     
 } EXERCISE_TYPE;
 
 class Exercise {
 public:
-    Exercise() : m_name("Default Exercise"), m_units(eUNIT_KG), m_sets(0), m_reps(0), m_percentage(0) {};
-    Exercise(std::string name, UNIT unit, float sets, float reps, float percentage): m_name(name), m_units(unit), m_sets(sets), m_reps(reps), m_percentage(percentage) {}
-    Exercise(std::string name,float sets, float reps, float percentage): m_name(name), m_units(eUNIT_KG), m_sets(sets), m_reps(reps), m_percentage(percentage), m_exerciseType(eExercise_Type_Unassigned) {}
+    Exercise() : m_name("Default Exercise"), m_units(eUNIT_KG), m_sets(0), m_reps(0), m_percentage(0), m_exerciseType(eExercise_Type_Unassigned), m_weight(0) {};
+    Exercise(std::string name, UNIT unit, float sets, float reps, float percentage): m_name(name), m_units(unit), m_sets(sets), m_reps(reps), m_percentage(percentage), m_exerciseType(eExercise_Type_Unassigned), m_weight(0) {}
+    Exercise(std::string name,float sets, float reps, float percentage): m_name(name), m_units(eUNIT_KG), m_sets(sets), m_reps(reps), m_percentage(percentage), m_exerciseType(eExercise_Type_Unassigned), m_weight(0) {}
 
 
     ~Exercise() {};
@@ -42,6 +42,7 @@ public:
     float getReps() {return m_reps;}
     float getPercentage() {return m_percentage;}
     EXERCISE_TYPE getExerciseType() {return m_exerciseType;}
+    float getWeight() {return m_weight;}
     
     void setName(std::string name) {m_name = name;}
     void setUnits(UNIT units) { m_units = units; }
@@ -49,16 +50,18 @@ public:
     void setReps(float value) { m_reps = value;}
     void setPercentage(float value) { m_percentage = value;}
     void setExerciseType(EXERCISE_TYPE exerciseType) { m_exerciseType = exerciseType;}
+    void setWeight(float weight) { m_weight = weight;}
 
     void printExercise();
 
 private:
     std::string m_name;
     UNIT m_units;
+    EXERCISE_TYPE m_exerciseType;
     float m_sets;
     float m_reps;
     float m_percentage;
-    EXERCISE_TYPE m_exerciseType;
+    float m_weight;
 };
 
 class Day {
@@ -141,35 +144,21 @@ void testExerciseTypes(std::vector<std::string> names, std::vector<int> exercise
 Program* generateProgram(std::vector<Exercise*> baseTemplate, int weeks, Athlete* athlete, int daysPerWeek);
 EXERCISE_TYPE identifyExerciseType(std::string name);
 std::vector<Exercise*> generateBaseTemplate(const char* pathToJson);
-void Assign_Intensity(Exercise* exercise, float percentage);
+void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete);
 
 int main(int argc, char** argv){
     const char* pathToJson = "Files/test.json";
     boost::property_tree::ptree pt;
     boost::property_tree::read_json("Files/test.json",pt);
     
+    Athlete* athlete = new Athlete("Jake", 200, 145, 120, 140);
     std::vector<Exercise*> baseTemplate = generateBaseTemplate(pathToJson);
+    Assign_Intensities(baseTemplate, athlete);
+    
     int weeks = 4;
     int daysPerWeek = 3;
-    Athlete* athlete = new Athlete("Jake", 200, 145, 120, 140);
     Program* program = generateProgram(baseTemplate, weeks, athlete, daysPerWeek);
-    
-    std::vector<std::string> exerciseNames = {
-        "Squat",
-        "Snatch",
-        "Clean",
-        "Power Clean",
-        "Power Jerk",
-        "Jerk",
-        "blahblah Snatch",
-        "taco",
-        "Front Squat",
-        "Hang Snatch Below the Knee",
-        "Chicken"
-    };
 
-    std::vector<int> exercise_types = {0, 1, 2, 4, 4, 3, 1, -1, 0, 1, -1};
-    testExerciseTypes(exerciseNames, exercise_types);
     return 0;
 }
 
@@ -180,7 +169,10 @@ void Exercise::printExercise(){
         unit = "lbs";
     else
         unit = "kg";
-    std::cout << getName() << ": " << getSets() << " x " << getReps() << " @ " << getPercentage() << "%\n";
+    if(getExerciseType() == eExercise_Type_Unassigned)
+        std::cout << getName() << ": " << getSets() << " x " << getReps() << " @ " << getPercentage() << "%\n";
+    else   
+        std::cout << getName() << ": " << getSets() << " x " << getReps() << " @ " << getWeight()  << unit << " (" << getPercentage() << "%)\n";
 }
 
 void Day::printDay(){
@@ -209,8 +201,28 @@ void Program::printProgram(){
     }
 }
 
-void Assign_Intensity(Exercise* exercise, float percentage){
-    //exercise->setWeight(percentage * exercise->getWeight());
+void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete){
+   for(Exercise* ex : exercises){
+    switch(ex->getExerciseType()){
+        case eExercise_Type_Clean:
+            ex->setWeight(athlete->getCNJ() * ex->getPercentage());
+            break;
+        case eExercise_Type_Snatch:
+            ex->setWeight(athlete->getSnatch() * ex->getPercentage());
+            break;
+        case eExercise_Type_Jerk:
+            ex->setWeight(athlete->getCNJ() * ex->getPercentage());
+            break;
+        case eExercise_Type_Front:
+            ex->setWeight(athlete->getFront() * ex->getPercentage());
+            break;
+        case eExercise_Type_Squat:
+            ex->setWeight(athlete->getSquat() * ex->getPercentage());
+            break;
+        default:
+            break;
+    }
+   } 
 }
 
 Program* generateProgram(Athlete* athlete, const char* pathToJson, std::vector<float> percentages, UNIT units){
@@ -254,23 +266,20 @@ std::vector<Exercise*> generateBaseTemplate(const char* pathToJson){
         exercise_names.clear();
     }
 
-    for(const auto& ex : exercises) {
-        ex->printExercise();
-    }
     return exercises;
 
 } 
 
 Program* generateProgram(std::vector<Exercise*> baseTemplate, int weeks, Athlete* athlete, int daysPerWeek){
-    
+    return new Program();
 }
 
 EXERCISE_TYPE identifyExerciseType(std::string name){
     for(int i = 0; i < name.size(); i++){
         switch(name[i]){
-            case 'P':
-                if(name[i+1] == 'o')
-                    return eExercise_Type_Power;
+            case 'F':
+                if(name[i+1] == 'r')
+                    return eExercise_Type_Front;
             case 'S':
                 if(name[i+1] == 'q')
                     return eExercise_Type_Squat;
@@ -298,5 +307,23 @@ void testExerciseTypes(std::vector<std::string> names, std::vector<int> exercise
         assert(type == exercisetypes[count]);
         count++;
     }
+    //test case 1
+
+    // std::vector<std::string> exerciseNames = {
+    //     "Squat",
+    //     "Snatch",
+    //     "Clean",
+    //     "Power Clean",
+    //     "Power Jerk",
+    //     "Jerk",
+    //     "blahblah Snatch",
+    //     "taco",
+    //     "Front Squat",
+    //     "Hang Snatch Below the Knee",
+    //     "Chicken"
+    // };
+
+    // std::vector<int> exercise_types = {0, 1, 2, 4, 4, 3, 1, -1, 0, 1, -1};
+    // testExerciseTypes(exerciseNames, exercise_types);
 
 }
