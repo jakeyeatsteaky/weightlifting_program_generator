@@ -3,9 +3,9 @@
 #include <vector>
 #include <cassert>
 #include <string>
+#include <fstream>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-
 
 class Exercise;
 class Week;
@@ -28,7 +28,9 @@ typedef enum {
 } Exercise_Type;
 
 typedef enum {
-    eProgression_Protocol_Regular = 0
+    eProgression_Protocol_Regular = 0,
+    eProgression_Protocol_Aggressive = 1,
+    eProgression_Protocol_User_Input = 2
 } Progression_Protocol;
 
 class Exercise {
@@ -150,7 +152,9 @@ Exercise_Type identifyExerciseType(std::string name);
 std::vector<Exercise*> generateBaseTemplate(const char* pathToJson);
 void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete);
 std::vector<Week*> generateWeeklyProgression(std::vector<Day*> Week1, Progression_Protocol progressionProtocol, int numberOfWeeks);
+void applyProgressionChanges(Exercise* exercise, Progression_Protocol progressionProtocol);
 float calculateIncrease(Progression_Protocol progressionProtocol, Exercise* exercise);
+std::tuple<int,int,float> changesBasedOnExerciseType(Exercise_Type exType);
 
 int main(int argc, char** argv){
     const char* pathToJson = "Files/test.json";
@@ -163,7 +167,13 @@ int main(int argc, char** argv){
     int weeks = 4;
     int daysPerWeek = 3;
     Program* program = generateProgram(baseTemplate, weeks, athlete, daysPerWeek);
+    std::ofstream outfile;
+    outfile.open("output.txt");
+    std::streambuf *coutbuf = std::cout.rdbuf();
+    std::cout.rdbuf(outfile.rdbuf());
     program->printProgram();
+    std::cout.rdbuf(coutbuf);
+    outfile.close();
 
     return 0;
 }
@@ -183,17 +193,17 @@ void Exercise::printExercise(){
 
 void Day::printDay(){
     
-    printf("Day: %d\n", getIdx());
+    std::cout << "Day: " << getIdx() << std::endl;
     for(Exercise* ex : m_exercises){
-        printf("\t\t");
+        std::cout << "\t\t";
         ex->printExercise();
     }
 }
 
 void Week::printWeek(){
-    printf("Week: %d\n", getIdx());
+    std::cout << "Week: " << getIdx() << std::endl;
     for(Day* day : m_trainingDays){
-        printf("\t\t");
+        std::cout << "\t\t";
         day->printDay();
     }
 }
@@ -201,8 +211,9 @@ void Week::printWeek(){
 void Program::printProgram(){
     const char* name = getName().c_str();
     printf("%s Program: \n", name);
+    std::cout << name << " Program: " << std::endl;
     for(Week* week : m_weeks){
-        printf("\t");
+        std::cout << "\t";
         week->printWeek();
     }
 }
@@ -234,10 +245,12 @@ void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete){
 Program* generateProgram(std::vector<Exercise*>& baseTemplate, int weeks, Athlete* athlete, int daysPerWeek){
     // Populate Days
     std::vector<Day*> days {};
-    for(int i = 0; i < daysPerWeek; i++){
+    int dayIdx = 1;
+    for(int i = 0; i < daysPerWeek*4; i+=4){
         std::vector<Exercise*> dailyExercises = {baseTemplate[0+i], baseTemplate[1+i], baseTemplate[2+i], baseTemplate[3+i]};
-        Day* day = new Day(dailyExercises, i+1);
+        Day* day = new Day(dailyExercises, dayIdx);
         days.push_back(day);
+        dayIdx++;
     }
 
     std::vector<Week*> programWeeks = generateWeeklyProgression(days, eProgression_Protocol_Regular, weeks);
@@ -245,7 +258,6 @@ Program* generateProgram(std::vector<Exercise*>& baseTemplate, int weeks, Athlet
     Program* program = new Program("Some Program", programWeeks);
     return program;
 }
-
 
 std::vector<Exercise*> generateBaseTemplate(const char* pathToJson){
     std::vector<Exercise*> exercises {};
@@ -348,15 +360,63 @@ std::vector<Week*> generateWeeklyProgression(std::vector<Day*> Week1, Progressio
     for(int weekCount = 2; weekCount <= numberOfWeeks; weekCount++){
         for(Day* day : Week1){
             for(Exercise* ex : day->getExercises()){
-                float increase = calculateIncrease(progressionProtocol, ex);
-                ex->setReps(ex->getReps() - 1);
-                ex->setSets(ex->getSets() + 1);
-                ex->setWeight(ex->getWeight() + increase);
+                applyProgressionChanges(ex, progressionProtocol);
             }
         }
         program.push_back(new Week(Week1, weekCount));
     }
     return program;
+}
+
+void applyProgressionChanges(Exercise* exercise, Progression_Protocol progressionProtocol){
+    switch(progressionProtocol){
+        case eProgression_Protocol_Regular: {
+            std::tuple<int,int,float> changesToApply = changesBasedOnExerciseType(exercise->getExerciseType());
+            int newSets = exercise->getSets() - std::get<0>(changesToApply);
+            int newReps = exercise->getReps() - std::get<1>(changesToApply);
+            int newWeight = exercise->getWeight() * std::get<2>(changesToApply);
+            exercise->setSets(newSets);
+            exercise->setReps(newReps);
+            exercise->setWeight(newWeight);
+            break;
+        }
+        case eProgression_Protocol_Aggressive: {
+            break; 
+        }
+        case eProgression_Protocol_User_Input: {
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+}
+
+std::tuple<int,int,float> changesBasedOnExerciseType(Exercise_Type exType){
+    std::tuple<int,int,float> ret;
+    switch(exType){
+        case eExercise_Type_Clean:
+            ret = std::tuple<int,int,float>(1, 1, 1.04);
+            break;
+        case eExercise_Type_Squat:
+            ret = std::tuple<int,int,float>(1, 2, 1.05);
+            break;
+        case eExercise_Type_Snatch:
+            ret = std::tuple<int,int,float>(1, 1, 1.03);
+            break;
+        case eExercise_Type_Jerk:
+            ret = std::tuple<int,int,float>(1, 1, 1.04);
+            break;
+        case eExercise_Type_Front:
+            ret = std::tuple<int,int,float>(1, 2, 1.04);
+            break;
+        case eExercise_Type_Unassigned:
+            ret = std::tuple<int,int,float>(1, 1, 1.04);
+            break;
+        default:
+            break;
+    }
+    return ret;
 }
 
 float calculateIncrease(Progression_Protocol progressionProtocol, Exercise* exercise){
