@@ -8,7 +8,28 @@
 TODO:
     [√] Output program to file
     [√] check why weights are printing as shitty data
-    [ ] generateWeeklyProgresssion is adding all the day days to each week. Week1 looks like week 4 DEBUG
+    [√] generateWeeklyProgresssion is adding all the day days to each week. Week1 looks like week 4 DEBUG
+    [ ] perhaps use nlohmannjson as a better parsing lib
+    [ ] Make the applyProgressionChanges more robust
+    [ ] Make the json input less robust.  
+        - can this generate a program based on a generic setting like "volume" or "peaking" rather than hardcoding in the specific exercises
+    [ ] REFACTOR
+
+    Progression for sets and reps determined by starting configuration?
+    3x10 -> 4x8 -> 5x6 -> 4x4 if 4 week
+    5x5 -> 5x5 -> 6x4 -> 4x4 -> 6x3 -> 3x3 if 6 week
+
+    Metrics to Consider when applying a progression:
+        - Number of weeks
+        - start setxrep configuration
+        - exercise type
+        - progression protocol
+        - 
+
+        ** should applyProgressionChanges() as a function take into account all of these metrics? **
+
+        This could also potentially be an applcaition for a relational database
+
 
 
 

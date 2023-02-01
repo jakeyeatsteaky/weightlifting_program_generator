@@ -152,29 +152,23 @@ Exercise_Type identifyExerciseType(std::string name);
 std::vector<Exercise*> generateBaseTemplate(const char* pathToJson);
 void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete);
 std::vector<Week*> generateWeeklyProgression(std::vector<Day*> Week1, Progression_Protocol progressionProtocol, int numberOfWeeks);
+std::vector<Day*> createWeekFromTemplate(std::vector<Day*> week);
 void applyProgressionChanges(Exercise* exercise, Progression_Protocol progressionProtocol);
 float calculateIncrease(Progression_Protocol progressionProtocol, Exercise* exercise);
 std::tuple<int,int,float> changesBasedOnExerciseType(Exercise_Type exType);
+void readCoutBufferOpen(Program* program, const char* pathToOutputFile);
 
 int main(int argc, char** argv){
     const char* pathToJson = "Files/test.json";
     boost::property_tree::ptree pt;
     boost::property_tree::read_json("Files/test.json",pt);
-    
     Athlete* athlete = new Athlete("Jake", 200, 145, 120, 140);
     std::vector<Exercise*> baseTemplate = generateBaseTemplate(pathToJson);
     Assign_Intensities(baseTemplate, athlete);
     int weeks = 4;
     int daysPerWeek = 3;
     Program* program = generateProgram(baseTemplate, weeks, athlete, daysPerWeek);
-    std::ofstream outfile;
-    outfile.open("output.txt");
-    std::streambuf *coutbuf = std::cout.rdbuf();
-    std::cout.rdbuf(outfile.rdbuf());
-    program->printProgram();
-    std::cout.rdbuf(coutbuf);
-    outfile.close();
-
+    readCoutBufferOpen(program, "output.txt");
     return 0;
 }
 
@@ -210,12 +204,21 @@ void Week::printWeek(){
 
 void Program::printProgram(){
     const char* name = getName().c_str();
-    printf("%s Program: \n", name);
     std::cout << name << " Program: " << std::endl;
     for(Week* week : m_weeks){
         std::cout << "\t";
         week->printWeek();
     }
+}
+
+void readCoutBufferOpen(Program* program, const char* pathToOutputFile){
+    std::ofstream outfile;
+    outfile.open(pathToOutputFile);
+    std::streambuf *coutbuf = std::cout.rdbuf();
+    std::cout.rdbuf(outfile.rdbuf());
+    program->printProgram();
+    std::cout.rdbuf(coutbuf);
+    outfile.close();
 }
 
 void Assign_Intensities(std::vector<Exercise*>& exercises, Athlete* athlete){
@@ -356,22 +359,52 @@ void testExerciseTypes(std::vector<std::string> names, std::vector<int> exercise
 std::vector<Week*> generateWeeklyProgression(std::vector<Day*> Week1, Progression_Protocol progressionProtocol, int numberOfWeeks){
     std::vector<Week*> program {};
     int weekCount = 1;
-    program.push_back(new Week(Week1, weekCount));
+    std::vector<Day*> temp = createWeekFromTemplate(Week1);
+    Week* firstWeek = new Week(temp, weekCount);
+    program.push_back(firstWeek);
+
     for(int weekCount = 2; weekCount <= numberOfWeeks; weekCount++){
         for(Day* day : Week1){
             for(Exercise* ex : day->getExercises()){
                 applyProgressionChanges(ex, progressionProtocol);
             }
         }
-        program.push_back(new Week(Week1, weekCount));
+        temp = createWeekFromTemplate(Week1);
+        Week* newWeek = new Week(temp, weekCount);
+        program.push_back(newWeek);
     }
     return program;
+}
+
+std::vector<Day*> createWeekFromTemplate(std::vector<Day*> week){
+    std::vector<Day*> day {};
+    for(Day* d : week){
+        std::vector<Exercise*> exercises = d->getExercises();
+        std::vector<Exercise*> newExercises {};
+        for(Exercise* ex : exercises){
+            std::string name = ex->getName();
+            UNIT units = ex->getUnits();
+            float sets = ex->getSets();
+            float reps = ex->getReps();
+            float percentage = ex->getPercentage();
+            float weight = ex->getWeight();
+            Exercise* newExercise = new Exercise(name, units, sets, reps, percentage);
+            newExercise->setWeight(weight);
+            newExercise->setExerciseType(identifyExerciseType(name));
+            newExercises.push_back(newExercise);
+        }
+        Day* newDay = new Day(newExercises, d->getIdx());
+        day.push_back(newDay);
+    }
+
+    return day;
 }
 
 void applyProgressionChanges(Exercise* exercise, Progression_Protocol progressionProtocol){
     switch(progressionProtocol){
         case eProgression_Protocol_Regular: {
             std::tuple<int,int,float> changesToApply = changesBasedOnExerciseType(exercise->getExerciseType());
+            
             int newSets = exercise->getSets() - std::get<0>(changesToApply);
             int newReps = exercise->getReps() - std::get<1>(changesToApply);
             int newWeight = exercise->getWeight() * std::get<2>(changesToApply);
