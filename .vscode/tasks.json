@@ -8,7 +8,9 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "-IC:/Program Files/boost/boost_1_81_0",
+                "-Iheaders",
                 "${file}",
+                "src/*.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
