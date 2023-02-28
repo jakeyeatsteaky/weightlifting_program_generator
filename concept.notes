@@ -13,7 +13,7 @@ TODO:
     [ ] Make the applyProgressionChanges more robust
     [ ] Make the json input less robust.  
         - can this generate a program based on a generic setting like "volume" or "peaking" rather than hardcoding in the specific exercises
-    [ ] REFACTOR
+    [√] REFACTOR
 
     Progression for sets and reps determined by starting configuration?
     3x10 -> 4x8 -> 5x6 -> 4x4 if 4 week
